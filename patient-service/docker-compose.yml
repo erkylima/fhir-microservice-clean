@@ -1,0 +1,23 @@
+version: "3.8"
+
+services:
+    fast:
+        build: .
+        ports:
+            - 8080:80
+        env_file:
+            - .env
+        volumes:
+            - .:/app
+    db:
+        image: mongo
+        ports:
+            - 6000:27017
+        volumes:
+            - taskdb:/data/db
+        environment:
+            MONGO_INITDB_ROOT_USERNAME: admin
+            MONGO_INITDB_ROOT_PASSWORD: password123
+            #MONGO_INITDB_DATABASE: admin
+volumes:
+    taskdb:
