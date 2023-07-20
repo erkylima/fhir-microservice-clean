@@ -1,8 +1,8 @@
 #===================== Importing FastAPI necessary packages =============
 from fastapi import FastAPI, Request
 
-from cmd import settings
-from internal.routers.base import router
+from app import settings
+from app.routers.base import router
 origins = [
     settings.CLIENT_ORIGIN,
 ]
