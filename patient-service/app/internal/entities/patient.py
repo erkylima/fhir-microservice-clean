@@ -1,23 +1,131 @@
+import random
+import typing
+import names
+
 from bson import ObjectId
-from fhir.resources.patient import Patient
+import fhir.resources.fhirtypes as fhirtypes
 from pydantic import BaseModel, Field
 
-class PyObjectId(ObjectId):
-    @classmethod
-    def __get_validators__(cls):
-        yield cls.validate
+class PatientModel(BaseModel):
+    _id: str = Field(default_factory=ObjectId, alias="_id")
 
-    @classmethod
-    def validate(cls, v):
-        if not ObjectId.is_valid(v):
-            raise ValueError("Invalid objectid")
-        return ObjectId(v)
+    resource_type = Field("Patient", const=True)
 
-    @classmethod
-    def __modify_schema__(cls, field_schema):
-        field_schema.update(type="string")
-class PatientModel(Patient):
-    id: str = Field(default_factory=ObjectId, alias="_id")
+    identifier: typing.List[fhirtypes.IdentifierType] = Field(
+        None,
+        alias="identifier",
+        title="An identifier for this patient",
+        description=None,
+        # if property is element of this resource.
+        element_property=True,
+    )
+
+    active: bool = Field(
+        None,
+        alias="active",
+        title="Whether this patient's record is in active use",
+        description=(
+            "Whether this patient record is in active use.  Many systems use this "
+            "property to mark as non-current patients, such as those that have not "
+            "been seen for a period of time based on an organization's business "
+            "rules.  It is often used to filter patient lists to exclude inactive "
+            "patients  Deceased patients may also be marked as inactive for the "
+            "same reasons, but may be active for some time after death."
+        ),
+        # if property is element of this resource.
+        element_property=True,
+    )
+
+    name: typing.List[fhirtypes.HumanNameType] = Field(
+        None,
+        alias="name",
+        title="A name associated with the patient",
+        description="A name associated with the individual.",
+        # if property is element of this resource.
+        element_property=True,
+    )
+
+    photo: typing.List[fhirtypes.AttachmentType] = Field(
+        None,
+        alias="photo",
+        title="Image of the patient",
+        description=None,
+        # if property is element of this resource.
+        element_property=True,
+    )
+
+    telecom: typing.List[fhirtypes.ContactPointType] = Field(
+        None,
+        alias="telecom",
+        title="A contact detail for the individual",
+        description=(
+            "A contact detail (e.g. a telephone number or an email address) by "
+            "which the individual may be contacted."
+        ),
+        # if property is element of this resource.
+        element_property=True,
+    )
+
+    address: typing.List[fhirtypes.AddressType] = Field(
+        None,
+        alias="address",
+        title="Address for the contact person",
+        description=None,
+        # if property is element of this resource.
+        element_property=True,
+    )
+
+    birthDate: fhirtypes.String = Field(
+        None,
+        alias="birthDate",
+        title="The date of birth for the individual",
+        description=None,
+        # if property is element of this resource.
+        element_property=True,
+    )
+
+    deceasedBoolean: bool = Field(
+        None,
+        alias="deceasedBoolean",
+        title="Indicates if the individual is deceased or not",
+        description=None,
+        # if property is element of this resource.
+        element_property=True,
+        # Choice of Data Types. i.e deceased[x]
+        one_of_many="deceased",
+        one_of_many_required=False,
+    )
+
+    gender: fhirtypes.Code = Field(
+        None,
+        alias="gender",
+        title="male | female | other | unknown",
+        description=(
+            "Administrative Gender - the gender that the patient is considered to "
+            "have for administration and record keeping purposes."
+        ),
+        # if property is element of this resource.
+        element_property=True,
+        # note: Enum values can be used in validation,
+        # but use in your own responsibilities, read official FHIR documentation.
+        enum_values=["male", "female", "other", "unknown"],
+    )
+
+    maritalStatus: fhirtypes.CodeableConceptType = Field(
+        None,
+        alias="maritalStatus",
+        title="Marital (civil) status of a patient",
+        description="This field contains a patient's most recent marital (civil) status.",
+        # if property is element of this resource.
+        element_property=True,
+    )
+
+
+
+    def dict(self, *args, **kwargs):
+        if kwargs and kwargs.get("exclude_none") is not None:
+            kwargs["exclude_none"] = True
+            return BaseModel.dict(self, *args, **kwargs)
 
     class Config:
         allow_population_by_field_name = True
@@ -31,7 +139,7 @@ class PatientModel(Patient):
                         {
                             "use": "official",
                             "system": "https://interoperabilidade.dasa.com.br/fhir/NamingSystem/govbr-receitafederal-pessoafisica-id",
-                            "value": "70321584201"
+                            "value": f"{random.randrange(9999999999,99999999999)}"
                         }
                     ],
                     "address": [
@@ -55,7 +163,7 @@ class PatientModel(Patient):
                     "gender": "male",
                     "name": [
                         {
-                            "text": "Érky Vinícius de Santos"
+                            "text": f"{names.get_full_name()}"
                         }
                     ],
                     "deceasedBoolean": "false",
@@ -88,8 +196,6 @@ class PatientModel(Patient):
                             "value": "das_dores@aol.com.br",
                             "use": "home"
                         }
-                    ],
-                    "created_at": "datetime",
-                    "updated_at": "datetime"
+                    ]
                 }
-        }
+            }
