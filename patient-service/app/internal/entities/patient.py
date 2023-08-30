@@ -1,13 +1,14 @@
-import random
 import typing
-import names
+import uuid
 
 from bson import ObjectId
-import fhir.resources.fhirtypes as fhirtypes
+from fhir.resources import fhirtypes
+from fhir.resources.patient import Patient
 from pydantic import BaseModel, Field
 
-class PatientModel(BaseModel):
-    _id: str = Field(default_factory=ObjectId, alias="_id")
+
+class PatientModel(Patient):
+    id: str = Field(default_factory=ObjectId, alias="_id")
 
     resource_type = Field("Patient", const=True)
 
@@ -120,12 +121,40 @@ class PatientModel(BaseModel):
         element_property=True,
     )
 
-
-
-    def dict(self, *args, **kwargs):
-        if kwargs and kwargs.get("exclude_none") is not None:
-            kwargs["exclude_none"] = True
-            return BaseModel.dict(self, *args, **kwargs)
+    @classmethod
+    def elements_sequence(cls):
+        """returning all elements names from
+        ``Patient`` according specification,
+        with preserving original sequence order.
+        """
+        return [
+            "_id",
+            "meta",
+            "implicitRules",
+            "language",
+            "text",
+            "contained",
+            "extension",
+            "modifierExtension",
+            "identifier",
+            "active",
+            "name",
+            "telecom",
+            "gender",
+            "birthDate",
+            "deceasedBoolean",
+            "deceasedDateTime",
+            "address",
+            "maritalStatus",
+            "multipleBirthBoolean",
+            "multipleBirthInteger",
+            "photo",
+            "contact",
+            "communication",
+            "generalPractitioner",
+            "managingOrganization",
+            "link",
+        ]
 
     class Config:
         allow_population_by_field_name = True
@@ -138,8 +167,8 @@ class PatientModel(BaseModel):
                     "identifier": [
                         {
                             "use": "official",
-                            "system": "https://interoperabilidade.dasa.com.br/fhir/NamingSystem/govbr-receitafederal-pessoafisica-id",
-                            "value": f"{random.randrange(9999999999,99999999999)}"
+                            "system": "https://qbem.com.br/fhir/NamingSystem/govbr-receitafederal-pessoafisica-id",
+                            "value": "70321584201"
                         }
                     ],
                     "address": [
@@ -163,7 +192,12 @@ class PatientModel(BaseModel):
                     "gender": "male",
                     "name": [
                         {
-                            "text": f"{names.get_full_name()}"
+                            "use": "official",
+                            "family": "Muster",
+                            "given": [
+                                "Maria"
+                            ],
+                            "text": "Maria Muster"
                         }
                     ],
                     "deceasedBoolean": "false",
@@ -198,4 +232,4 @@ class PatientModel(BaseModel):
                         }
                     ]
                 }
-            }
+        }

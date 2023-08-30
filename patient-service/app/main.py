@@ -1,12 +1,12 @@
 #===================== Importing FastAPI necessary packages =============
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Query
 
 from app import settings
 from app.routers.base import router
 origins = [
     settings.CLIENT_ORIGIN,
 ]
-from fastapi_pagination import add_pagination
+from fastapi_pagination import add_pagination, Page
 
 #------------------ FastAPI variable ----------------------------------
 app = FastAPI()
