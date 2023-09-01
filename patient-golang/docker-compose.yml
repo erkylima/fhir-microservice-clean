@@ -1,0 +1,12 @@
+version: "3.8"
+services:
+    patient-api:
+        image: cosmtrek/air
+        container_name: patient-api
+        working_dir: /app
+        ports:
+            - 8081:8081
+        env_file:
+            - .env        
+        volumes:
+            - ./:/app

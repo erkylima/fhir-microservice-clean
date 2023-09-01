@@ -50,7 +50,7 @@ async def show_patient(resource_id: str):
 
 @router.get("/patients/", response_model_by_alias=True, response_model=LimitOffsetPage[PatientModel],
             response_model_exclude_none=True, response_description="List all patients by name", tags=["Patient"])
-async def retrieve_patients(name: str = None, birth: str = None):
+async def retrieve_patients(name: str = None, birth: str = None, limit: int = 10):
     filters = {}
     if name is not None:
         filters.update({"name": {"$elemMatch": {'text': {'$regex': name, '$options': 'i'}}}})

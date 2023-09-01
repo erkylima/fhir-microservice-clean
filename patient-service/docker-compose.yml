@@ -1,14 +1,54 @@
 version: "3.8"
 
 services:
-    fast:
+    fast1:
         build: .
+        deploy:
+            mode: replicated
+            replicas: 1
+            resources:
+                limits:
+                    cpus: '2'
+                    memory: '2G'
+            placement:
+                constraints:
+                    - node.labels.type == slave1
         ports:
-            - 8080:80
+            - "8080:80"
         env_file:
             - .env
         volumes:
             - .:/project
+    fast2:
+        build: .
+        deploy:
+            mode: replicated
+            replicas: 1
+            resources:
+                limits:
+                    cpus: '2'
+                    memory: '2G'
+            placement:
+                constraints:
+                    - node.labels.type == slave2
+        ports:
+            - "8081:80"
+        env_file:
+            - .env
+        volumes:
+            - .:/project
+
+    nginx:
+        build:
+            dockerfile: ./docker/nginx.dockerfile
+            context: .
+        image: nginx
+        container_name: container-lb
+        ports:
+            - "80:80"
+        depends_on:
+            - "fast1"
+            - "fast2"
     db:
         image: mongo
         ports:

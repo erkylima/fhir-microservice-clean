@@ -11,7 +11,7 @@ from fastapi_pagination import add_pagination, Page
 #------------------ FastAPI variable ----------------------------------
 app = FastAPI()
 
-@app.get("/health")
+@app.get("/")
 async def base(request: Request):
     return {"message": "It's Healthy"}
 
