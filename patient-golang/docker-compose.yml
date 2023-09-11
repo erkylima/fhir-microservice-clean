@@ -1,12 +1,48 @@
 version: "3.8"
 services:
-    patient-api:
-        image: cosmtrek/air
-        container_name: patient-api
-        working_dir: /app
+    web:    
+        build: .
+        deploy:
+            mode: replicated
+            replicas: 2
+            resources:
+                limits:
+                    cpus: '2.000'
+                    memory: '2048M'            
         ports:
-            - 8081:8081
+            - "8080"
         env_file:
-            - .env        
+            - .env
         volumes:
-            - ./:/app
+        - .:/go/src
+        depends_on:
+            - db   
+    db:
+        image: mongo
+        deploy:
+            mode: replicated
+            replicas: 1
+            resources:
+                limits:
+                    cpus: '2.000'
+                    memory: '2048M'  
+        ports:
+            - 6000:27017
+        volumes:
+            - taskdb:/data/db
+        environment:
+            MONGO_INITDB_ROOT_USERNAME: admin
+            MONGO_INITDB_ROOT_PASSWORD: password123
+            #MONGO_INITDB_DATABASE: admin
+    nginx:
+        build:
+            dockerfile: ./docker/nginx.dockerfile
+            context: .
+        image: nginx
+        container_name: container
+        ports:
+            - "80:80"
+        depends_on:
+            - "web"
+volumes:
+    taskdb:

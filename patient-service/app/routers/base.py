@@ -1,29 +1,25 @@
 from __future__ import annotations
 
-import json
-import random, names
-from typing import List
-
 from fastapi import (
     APIRouter,
     status, Body, Query,
 )
-from fhir.resources.patient import Patient
+
 from starlette.responses import JSONResponse
 from fastapi_pagination import LimitOffsetPage
 from fastapi_pagination.ext.motor import paginate
 
 from fastapi import HTTPException
-from app.dependencies import parse_json
 from app.internal.entities.patient import PatientModel
 from app.settings import patients_collection, database
 from fastapi.encoders import jsonable_encoder
+from fastapi_cache.decorator import cache
 
 router = APIRouter()
 
 
 @router.post("/patients", status_code=status.HTTP_201_CREATED, response_description="Add new user", tags=["Patient"])
-async def create_patient(patient: PatientModel = Body(...)):
+async def create_patient(patient: PatientModel):
 
     patient = jsonable_encoder(patient, by_alias=True, exclude_none=True)
 
@@ -42,6 +38,7 @@ async def create_patient(patient: PatientModel = Body(...)):
 
 @router.get("/patients/{resource_id}", response_description="Get a single patient by id",
             response_model=PatientModel, tags=["Patient"], response_model_exclude_none=True)
+@cache(namespace="Patient", expire=5)
 async def show_patient(resource_id: str):
     if (patient := await database["patients_collection"].find_one({"_id": resource_id})) is not None:
         return JSONResponse(status_code=status.HTTP_200_OK, content=patient)
@@ -50,6 +47,7 @@ async def show_patient(resource_id: str):
 
 @router.get("/patients/", response_model_by_alias=True, response_model=LimitOffsetPage[PatientModel],
             response_model_exclude_none=True, response_description="List all patients by name", tags=["Patient"])
+@cache(namespace="Patient", expire=5)
 async def retrieve_patients(name: str = None, birth: str = None, limit: int = 10):
     filters = {}
     if name is not None:

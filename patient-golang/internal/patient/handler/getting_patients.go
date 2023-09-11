@@ -2,7 +2,6 @@ package handler
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"strconv"
 
@@ -15,8 +14,6 @@ func ListAllPatients(c *gin.Context) {
 	provider := provider.NewPatientProvider()
 	var filter = prepare(c)
 	var err error
-
-	log.Println("filter:")
 
 	patients, err := provider.Pull(*filter)
 	if err != nil {
@@ -46,10 +43,6 @@ func prepare(c *gin.Context) *provider.PatientPullFilter {
 	if c.Query("offset") != "" {
 		offset, _ := strconv.Atoi(c.Query("offset"))
 		filter.Offset = int64(offset)
-	}
-
-	if c.Query("registryCode") != "" {
-		filter.RegistryCode = c.Query("registryCode")
 	}
 
 	return filter

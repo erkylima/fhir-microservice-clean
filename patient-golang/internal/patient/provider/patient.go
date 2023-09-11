@@ -29,16 +29,15 @@ type PatientChangeData struct {
 }
 
 type PatientPullFilter struct {
-	Offset       int64
-	Limit        int64
-	RegistryCode string
+	Offset int64
+	Limit  int64
 }
 
 func NewPatientProvider() *PatientProvider {
 	ctx, cancel := context.WithCancel(context.Background())
 	mongo_uri := config.MongoUri()
 	uri, _ := url.Parse(mongo_uri)
-	collection, err := dbmongo.NewCollection(uri.String(), "patients", "patients")
+	collection, err := dbmongo.NewCollection(uri.String(), "patients", "patients_collection")
 	if err != nil {
 		defer cancel()
 		log.Printf("Error: %v", err)
@@ -52,6 +51,7 @@ func NewPatientProvider() *PatientProvider {
 }
 
 func (p *PatientProvider) Push(m *fhir.Patient) (string, error) {
+	defer p.collection.Database().Client().Disconnect(p.ctx)
 
 	paciente := fhir.Patient{}
 	var opts = options.FindOne()
@@ -80,19 +80,23 @@ func (p *PatientProvider) Push(m *fhir.Patient) (string, error) {
 
 func (p *PatientProvider) Count(filter *PatientPullFilter) int64 {
 	data := bson.D{{}}
+	var opts = new(options.CountOptions)
 
-	if filter.RegistryCode != "" {
-		data = bson.D{{Key: "registryCode", Value: filter.RegistryCode}}
+	if filter.Limit != 0 {
+		opts = opts.SetLimit(filter.Limit)
 	}
 
-	total, _ := p.collection.CountDocuments(context.TODO(), data, nil)
+	if filter.Offset != 0 {
+		opts = opts.SetSkip(filter.Offset)
+	}
+	total, _ := p.collection.CountDocuments(context.TODO(), data, opts)
 	return total
 }
 
 func (p *PatientProvider) UpdateOne(slug string, key string, value any) error {
 	var err error
 	var opts = options.Update().SetUpsert(true)
-	var filter = bson.D{{Key: "slug", Value: slug}}
+	var filter = bson.D{{Key: "id", Value: slug}}
 	var update = bson.D{{Key: "$set", Value: bson.D{{Key: key, Value: value}}}}
 	result, err := p.collection.UpdateOne(p.ctx, filter, update, opts)
 
@@ -104,40 +108,10 @@ func (p *PatientProvider) UpdateOne(slug string, key string, value any) error {
 	return nil
 }
 
-func (p *PatientProvider) UpdateOnePatientBySlug(slug string, value *fhir.Patient) error {
-	var err error
-	var opts = options.Update().SetUpsert(true)
-	var filter = bson.D{{Key: "slug", Value: slug}}
-	var update = bson.D{{Key: "$set", Value: value}}
-	result, err := p.collection.UpdateOne(p.ctx, filter, update, opts)
-
-	if err != nil {
-		log.Println(result)
-		return errors.New("não foi possível atualizar o paciente")
-	}
-
-	return nil
-}
-
-// PullOne realiza consulta de paciente por slug
-func (p *PatientProvider) PullOneBySlug(id string) (*fhir.Patient, error) {
-	var err error
-	var patient = fhir.Patient{}
-	var opts = options.FindOne()
-	var filter = bson.D{{Key: "id", Value: id}}
-
-	err = p.collection.FindOne(context.TODO(), filter, opts).Decode(&patient)
-
-	if err != nil {
-		log.Println(err.Error())
-		return nil, errors.New("not is possible find patient")
-	}
-
-	return &patient, nil
-}
-
 // PullOne realiza consulta de paciente por id
 func (p *PatientProvider) PullOne(id string) (*fhir.Patient, error) {
+	defer p.collection.Database().Client().Disconnect(p.ctx)
+
 	var patient *fhir.Patient
 	var opts = options.FindOne()
 	var filter = bson.D{{Key: "_id", Value: id}}
@@ -164,11 +138,7 @@ func (p *PatientProvider) Pull(filter PatientPullFilter) (*[]fhir.Patient, error
 		opts = opts.SetSkip(filter.Offset)
 	}
 
-	if filter.RegistryCode != "" {
-		doc = bson.D{{Key: "_id", Value: filter.RegistryCode}}
-	}
-
-	opts = opts.SetSort(bson.D{{Key: "fullname", Value: 1}, {Key: "id", Value: 1}})
+	//opts = opts.SetSort(bson.D{{Key: "fullname", Value: 1}, {Key: "id", Value: 1}})
 
 	cur, err := p.collection.Find(p.ctx, doc, opts)
 
@@ -178,7 +148,7 @@ func (p *PatientProvider) Pull(filter PatientPullFilter) (*[]fhir.Patient, error
 	}
 
 	patients, err = p.iterator(cur, err, patients)
-
+	defer p.collection.Database().Client().Disconnect(p.ctx)
 	if err != nil {
 		log.Fatalln(err.Error())
 	}
@@ -221,6 +191,7 @@ func (p *PatientProvider) ListAllPatients() ([]*fhir.Patient, error) {
 
 func (p *PatientProvider) DeleteOneBySlug(slug string) (int, error) {
 	var filter = bson.D{{Key: "slug", Value: slug}}
+	defer p.collection.Database().Client().Disconnect(p.ctx)
 
 	result, err := p.collection.DeleteOne(p.ctx, filter)
 

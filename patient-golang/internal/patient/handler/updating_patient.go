@@ -61,15 +61,9 @@ func UpdatingPatientBySlug(c *gin.Context) {
 	}
 
 	provider := provider.NewPatientProvider()
-	_, errFinding := provider.PullOneBySlug(slug)
+	_, errFinding := provider.PullOne(slug)
 	if errFinding != nil {
 		util.WriteErrorMessage(c, http.StatusNotFound, errFinding, "patient not found")
-		return
-	}
-
-	errUpdate := provider.UpdateOnePatientBySlug(slug, &patientUpdateValue)
-	if errUpdate != nil {
-		util.WriteErrorMessage(c, http.StatusInternalServerError, errUpdate, "error updating patient")
 		return
 	}
 

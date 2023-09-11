@@ -12,7 +12,7 @@ func GettingPatient(c *gin.Context) {
 	var id = c.Param("id")
 
 	provider := provider.NewPatientProvider()
-	patient, err := provider.PullOneBySlug(id)
+	patient, err := provider.PullOne(id)
 
 	if err != nil {
 		util.WriteError(c, http.StatusBadRequest, err)
